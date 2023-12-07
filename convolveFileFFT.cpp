@@ -15,30 +15,43 @@
 using namespace std;
 
 
-char *format;
-int chunkSize;
-char *chunkID;
-char *subChunk1ID;
+// char *format;
+// int chunk_size;
+// char *chunk_id;
+// char *subchunk1_id;
 int size1;
-int16_t blockAlign;
-int16_t bitsPerSample;
-int16_t audioFormat;
-int16_t numChannels;
-int sampleRate;
-char *subChunk2ID;
-int dataSize;
-short* fileData;
-int subChunk1Size;
-int byteRate;
+// short block_align;
+// short bits_per_sample;
+// short audio_format;
+// short num_channels;
+// int sample_rate;
+char *subchunk2_id;
+int data_size;
+short* file_data;
+// int subchunk1_size;
+// int byte_rate;
 
-float minRead = 0;
-float maxRead = 0;
+typedef struct {
+	char *chunk_id;
+	int chunk_size;
+	char *format;
+	char *subchunk1_id;
+	int subchunk1_size;
+	short audio_format;
+	short num_channels;
+	int sample_rate;
+	int byte_rate;
+	short block_align;
+	short bits_per_sample;
+} Wavheader;
+
+Wavheader header;
 
 //function definitions
 void wavWrite(char *fileName, int numSamples, float *signal);
 float* wavRead(char *fileName, float *signal, int *Thesize);
 void convolve(float x[], int N, float h[], int M, float y[], int P);
-void fft(double data[], int nn, int isign);
+void four1(double data[], int nn, int isign);
 void FFTScale (double signal[], int N);
 
 
@@ -100,28 +113,28 @@ void wavWrite(char *fileName, int numSamples, float *signal)
 {
 	ofstream outFile( fileName, ios::out | ios::binary);
 	//  Calculate the total number of bytes for the data chunk  
-	int chunkSize = numChannels * numSamples * (bitsPerSample / 8);
-	chunkID = "RIFF";
-	outFile.write( chunkID, 4);
-	outFile.write( (char*) &chunkSize, 4);
-	format = "WAVE";
-	outFile.write( format, 4);
-	outFile.write( subChunk1ID, 4);
-	subChunk1Size = 16;
-	outFile.write( (char*) &subChunk1Size, 4);
-	outFile.write( (char*) &audioFormat, 2);
-	outFile.write( (char*) &numChannels, 2);
-	outFile.write( (char*) &sampleRate, 4);
-	outFile.write( (char*) &byteRate, 4);
-	outFile.write( (char*) &blockAlign, 2);
-	outFile.write( (char*) &bitsPerSample, 2);
-	outFile.write( subChunk2ID, 4);
-	dataSize = numSamples * 2;
-	outFile.write( (char*)&dataSize, 4);
-	int16_t val;
+	int chunk_size = header.num_channels * numSamples * (header.bits_per_sample / 8);
+	header.chunk_id = "RIFF";
+	outFile.write( header.chunk_id, 4);
+	outFile.write( (char*) &chunk_size, 4);
+	header.format = "WAVE";
+	outFile.write( header.format, 4);
+	outFile.write( header.subchunk1_id, 4);
+	header.subchunk1_size = 16;
+	outFile.write( (char*) &header.subchunk1_size, 4);
+	outFile.write( (char*) &header.audio_format, 2);
+	outFile.write( (char*) &header.num_channels, 2);
+	outFile.write( (char*) &header.sample_rate, 4);
+	outFile.write( (char*) &header.byte_rate, 4);
+	outFile.write( (char*) &header.block_align, 2);
+	outFile.write( (char*) &header.bits_per_sample, 2);
+	outFile.write( subchunk2_id, 4);
+	data_size = numSamples * 2;
+	outFile.write( (char*)&data_size, 4);
+	short val;
 	for(int i = 0; i < numSamples; i++)
 	{
-		val = (int16_t)(signal[i] * (pow(2,15) - 1));
+		val = (short)(signal[i] * (pow(2,15) - 1));
 		outFile.write((char*)&val, 2);
 	}
 	outFile.close();
@@ -132,46 +145,46 @@ float* wavRead(char *fileName, float *signal, int *Thesize)
 {
 	ifstream inputFile( fileName, ios::in | ios::binary);
 	inputFile.seekg(ios::beg);
-	chunkID = new char[4];
-	inputFile.read( chunkID, 4);
-	inputFile.read( (char*) &chunkSize, 4);
-	format = new char[4];
-	inputFile.read( format, 4);
-	subChunk1ID = new char[4];
-	inputFile.read( subChunk1ID, 4);
-	inputFile.read( (char*) &subChunk1Size, 4);
-	inputFile.read( (char*) &audioFormat, 2);
-	inputFile.read( (char*) &numChannels, 2);
-	inputFile.read( (char*) &sampleRate, 4);
-	inputFile.read( (char*) &byteRate, 4);
-	inputFile.read( (char*) &blockAlign, 2);
-	inputFile.read( (char*) &bitsPerSample, 2);
+	header.chunk_id = new char[4];
+	inputFile.read( header.chunk_id, 4);
+	inputFile.read( (char*) &header.chunk_size, 4);
+	header.format = new char[4];
+	inputFile.read( header.format, 4);
+	header.subchunk1_id = new char[4];
+	inputFile.read( header.subchunk1_id, 4);
+	inputFile.read( (char*) &header.subchunk1_size, 4);
+	inputFile.read( (char*) &header.audio_format, 2);
+	inputFile.read( (char*) &header.num_channels, 2);
+	inputFile.read( (char*) &header.sample_rate, 4);
+	inputFile.read( (char*) &header.byte_rate, 4);
+	inputFile.read( (char*) &header.block_align, 2);
+	inputFile.read( (char*) &header.bits_per_sample, 2);
 
-	if(subChunk1Size == 18)
+	if(header.subchunk1_size == 18)
 	{
 		char *garbage;
 		garbage = new char[2];
 		inputFile.read( garbage, 2);
 	}
 
-	subChunk2ID = new char[4];
-	inputFile.read( subChunk2ID, 4);
+	subchunk2_id = new char[4];
+	inputFile.read( subchunk2_id, 4);
 	//DataSize
-	inputFile.read( (char*)&dataSize, 4);
+	inputFile.read( (char*)&data_size, 4);
 	//GetData
-	*Thesize = dataSize / 2;
-	int size = dataSize / 2;
-	fileData = new short[size];
+	*Thesize = data_size / 2;
+	int size = data_size / 2;
+	file_data = new short[size];
 	for(int j = 0 ; j < size; j++)
 	{
-		inputFile.read((char*) &fileData[j], 2);
+		inputFile.read((char*) &file_data[j], 2);
 	}
 
 	short val;
 	signal = new float[size];
 	for(int i = 0; i < size; i++)
 	{
-		val = fileData[i];
+		val = file_data[i];
 		signal[i] = (val * 1.0) / (pow(2,15) - 1);
 		if(signal[i] < -1.0)
 			signal[i] = -1.0;
@@ -214,13 +227,13 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 	for (i = 0; i < myArraySize; i++) {
 		paddedOutput[i] = 0;
 	}
-	fft((paddedInput - 1), myArraySize, 1);
-	fft((paddedImpulseResponse - 1), myArraySize, 1);
+	four1((paddedInput - 1), myArraySize, 1);
+	four1((paddedImpulseResponse - 1), myArraySize, 1);
 	for (i = 0; i < (myArraySize * 2); i+=2) {
 		paddedOutput[i] = (paddedInput[i] * paddedImpulseResponse[i]) - (paddedInput[i+1] * paddedImpulseResponse[i+1]);
 		paddedOutput[i+1] = (paddedInput[i+1] * paddedImpulseResponse[i]) + (paddedInput[i] * paddedImpulseResponse[i+1]);
 	}
-	fft((paddedOutput - 1), myArraySize, -1);
+	four1((paddedOutput - 1), myArraySize, -1);
 	
 	// FFT scaling.. we need to scale as per class notes
 	FFTScale(paddedOutput, myArraySize);
@@ -241,7 +254,7 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 //  at index 1, not 0, so subtract 1 when
 //  calling the routine (see main() below)
 
-void fft(double data[], int nn, int isign)
+void four1(double data[], int nn, int isign)
 {
     unsigned long n, mmax, m, j, istep, i;
     float wtemp, wr, wpr, wpi, wi, theta;
