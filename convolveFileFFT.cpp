@@ -15,9 +15,13 @@
 using namespace std;
 
 
+// Name: Anish Pokhrel
+// UCID: 30115576
+// CPSC 501 (Fall 2023) Assignment 4
+
 
 int size1;
-char *subchunk2_id;
+char subchunk2_id[4];
 int data_size;
 short* file_data;
 
@@ -40,10 +44,11 @@ typedef struct {
 Wavheader header;
 
 //function definitions
-void writeWavFile(char *fileName, int num_samples, float *signal);
-float* readWavFile(char *fileName, float *signal, int *combined_size);
 void convolve(float x[], int N, float h[], int M, float y[], int P);
 void four1(double data[], int nn, int isign);
+void writeWavFile(char *file_name, int num_samples, float *signal);
+float* readWavFile(char *file_name, float *signal, int *combined_size);
+
 
 
 
@@ -86,12 +91,17 @@ int main(int argc, char* argv[]){
 	float smallest_size = 0;
 	float largest_size = 0;
 
-	for(int i = 0; i < outfile_signal_size; i++) {
-		if(outfile_signal[i] > largest_size)
+	int i = 0;
+	while (i < outfile_signal_size) {
+		if(outfile_signal[i] > largest_size) {
 			largest_size = outfile_signal[i];
-		if(outfile_signal[i] < smallest_size)
+		}
+			
+		if(outfile_signal[i] < smallest_size) {
 			smallest_size = outfile_signal[i];
-	}
+		}
+		i++;
+	}	
 
 	smallest_size = smallest_size * -1;
 	if(smallest_size > largest_size)
@@ -110,89 +120,85 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
-void writeWavFile(char *fileName, int num_samples, float *signal) {
-	ofstream outFile( fileName, ios::out | ios::binary);
+void writeWavFile(char *file_name, int num_samples, float *signal) {
+	ofstream outputFileStream( file_name, ios::out | ios::binary);
 
 	//  Calculate the total number of bytes for the data chunk  
 	int chunk_size = header.num_channels * num_samples * (header.bits_per_sample / 8);
 	header.chunk_id = "RIFF";
-	outFile.write( header.chunk_id, 4);
-	outFile.write( (char*) &chunk_size, 4);
+	outputFileStream.write( header.chunk_id, 4);
+	outputFileStream.write( (char*) &chunk_size, 4);
 	header.format = "WAVE";
-	outFile.write( header.format, 4);
-	outFile.write( header.subchunk1_id, 4);
+	outputFileStream.write( header.format, 4);
+	outputFileStream.write( header.subchunk1_id, 4);
 	header.subchunk1_size = 16;
-	outFile.write( (char*) &header.subchunk1_size, 4);
-	outFile.write( (char*) &header.audio_format, 2);
-	outFile.write( (char*) &header.num_channels, 2);
-	outFile.write( (char*) &header.sample_rate, 4);
-	outFile.write( (char*) &header.byte_rate, 4);
-	outFile.write( (char*) &header.block_align, 2);
-	outFile.write( (char*) &header.bits_per_sample, 2);
-	outFile.write( subchunk2_id, 4);
+	outputFileStream.write( (char*) &header.subchunk1_size, 4);
+	outputFileStream.write( (char*) &header.audio_format, 2);
+	outputFileStream.write( (char*) &header.num_channels, 2);
+	outputFileStream.write( (char*) &header.sample_rate, 4);
+	outputFileStream.write( (char*) &header.byte_rate, 4);
+	outputFileStream.write( (char*) &header.block_align, 2);
+	outputFileStream.write( (char*) &header.bits_per_sample, 2);
+	outputFileStream.write( subchunk2_id, 4);
 	data_size = num_samples * 2;
-	outFile.write( (char*)&data_size, 4);
-	short val;
+	outputFileStream.write( (char*)&data_size, 4);
+	short temp;
 
 	for(int i = 0; i < num_samples; i++) {
-		val = (short)(signal[i] * (pow(2,15) - 1));
-		outFile.write((char*)&val, 2);
+		temp = (short)(signal[i] * (pow(2,15) - 1));
+		outputFileStream.write((char*)&temp, 2);
 	}
-	outFile.close();
+	outputFileStream.close();
 }
 
 
-float* readWavFile(char *fileName, float *signal, int *combined_size)
-{
-	ifstream inputFile( fileName, ios::in | ios::binary);
-	inputFile.seekg(ios::beg);
+float* readWavFile(char *file_name, float *signal, int *combined_size) {
+	ifstream inputFileStream( file_name, ios::in | ios::binary);
+	inputFileStream.seekg(ios::beg);
 	header.chunk_id = new char[4];
-	inputFile.read( header.chunk_id, 4);
-	inputFile.read( (char*) &header.chunk_size, 4);
+	inputFileStream.read( header.chunk_id, 4);
+	inputFileStream.read( (char*) &header.chunk_size, 4);
 	header.format = new char[4];
-	inputFile.read( header.format, 4);
+	inputFileStream.read( header.format, 4);
 
-	inputFile.read( header.subchunk1_id, 4);
-	inputFile.read( (char*) &header.subchunk1_size, 4);
-	inputFile.read( (char*) &header.audio_format, 2);
-	inputFile.read( (char*) &header.num_channels, 2);
-	inputFile.read( (char*) &header.sample_rate, 4);
-	inputFile.read( (char*) &header.byte_rate, 4);
-	inputFile.read( (char*) &header.block_align, 2);
-	inputFile.read( (char*) &header.bits_per_sample, 2);
+	inputFileStream.read( header.subchunk1_id, 4);
+	inputFileStream.read( (char*) &header.subchunk1_size, 4);
+	inputFileStream.read( (char*) &header.audio_format, 2);
+	inputFileStream.read( (char*) &header.num_channels, 2);
+	inputFileStream.read( (char*) &header.sample_rate, 4);
+	inputFileStream.read( (char*) &header.byte_rate, 4);
+	inputFileStream.read( (char*) &header.block_align, 2);
+	inputFileStream.read( (char*) &header.bits_per_sample, 2);
 
 	// remove bytes if subchunk1 size is 18
 	char extra_bytes[2];
 	if(header.subchunk1_size == subchunk1_size_max) {
-		inputFile.read( extra_bytes, 2);
+		inputFileStream.read( extra_bytes, 2);
 	}
 
 
 	// ****** The following code is from TA
-	subchunk2_id = new char[4];
-	inputFile.read( subchunk2_id, 4);
-
-	
-	inputFile.read( (char*)&data_size, 4);
+	inputFileStream.read( subchunk2_id, 4);
+	inputFileStream.read( (char*)&data_size, 4);
 	
 	*combined_size = data_size / 2;
 	int size = data_size / 2;
 	file_data = new short[size];
 
 	for(int j = 0 ; j < size; j++) {
-		inputFile.read((char*) &file_data[j], 2);
+		inputFileStream.read((char*) &file_data[j], 2);
 	}
 
 	signal = new float[size];
-	short val;
+	short temp;
 	for(int i = 0; i < size; i++) {
-		val = file_data[i];
-		signal[i] = (val * 1.0) / (pow(2,15) - 1);
+		temp = file_data[i];
+		signal[i] = (temp * 1.0) / (pow(2,15) - 1);
 		if(signal[i] < -1.0)
 			signal[i] = -1.0;
 
 	}
-	inputFile.close();
+	inputFileStream.close();
 	return signal;
 
 	// *********** TA code ends
@@ -234,9 +240,10 @@ void increase_padding(double *arr_output, double *arr_inputfile, double *arr_pad
 }
 
 //uses FFT algorithm to convolve
-void convolve(float x[], int N, float h[], int M, float y[], int P)
-{
-	int arr_size = 1;
+void convolve(float x[], int N, float h[], int M, float y[], int P) {
+	int arr_size;
+
+	arr_size = 1;
 	
 	// Build array of size 2^n
 	while (arr_size < P) {
@@ -273,15 +280,10 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 	// call four1 on padded impulse
 	four1((padded_IR - 1), arr_size, 1);
 
-	// for (int i = 0; i < (arr_size * 2); i+=2) {
-	// 	padded_output[i] = (inputfile_padded[i] * padded_IR[i]) - (inputfile_padded[i+1] * padded_IR[i+1]);
-	// 	padded_output[i+1] = (inputfile_padded[i+1] * padded_IR[i]) + (inputfile_padded[i] * padded_IR[i+1]);
-	// }
-
+	// adding paddings
 	increase_padding(padded_output, inputfile_padded, padded_IR, arr_size);
 
 	
-
 	four1((padded_output - 1), arr_size, -1);
 	
 
