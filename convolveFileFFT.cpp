@@ -18,6 +18,7 @@ using namespace std;
 // Name: Anish Pokhrel
 // UCID: 30115576
 // CPSC 501 (Fall 2023) Assignment 4
+// Optimized FFT file in C++
 
 
 int size1;
@@ -213,19 +214,15 @@ void padding(double paddedArray[], int some_M, float some_x[]) {
 }
 
 // Function to pad an input array with zeros
-double* padArray(float input[], int inputSize, double* paddedArray, int paddedSize) {
+void padArray(float input[], double* paddedArray, int paddedSize) {
     for (int i = 0; i < paddedSize; i += 2) {
-        if (i / 2 < inputSize) {
-            paddedArray[i] = input[i / 2];
-            paddedArray[i + 1] = 0;
-        } else {
-            paddedArray[i] = 0;
-            paddedArray[i + 1] = 0;
-        }
+		paddedArray[i] = input[i / 2];
+		paddedArray[i + 1] = 0; 
     }
-	return paddedArray;
 }
 
+// Function to pad zeros to the input array to make its length M
+// Code is from TA Kimiya Saadat
 void pad_zeros_to(double *arr, int current_array_size) {
 		for (int i = 0; i < current_array_size; ++i) {
         	arr[current_array_size + i] = 0.0;
@@ -254,19 +251,18 @@ void convolve(float x[], int N, float h[], int M, float y[], int P) {
 	double *inputfile_padded = new double[2 * arr_size];
 	double *padded_IR = new double[2 * arr_size];
 
-	for (int i = 0; i < (N * 2); i+=2) {
-		inputfile_padded[i] = x[i/2];
-		inputfile_padded[i+1] = 0;
-	}
+	
+	// adding padding to input file
+	padArray(x, inputfile_padded, (N*2));
 
+	// padding zeros to input file
 	pad_zeros_to(inputfile_padded, arr_size);
 	
 
-	for (int i = 0; i < (M * 2); i+=2) {
-		padded_IR[i] = h[i/2];
-		padded_IR[i+1] = 0;
-	}
-
+	// adding padding to IR file
+	padArray(h, padded_IR, (M*2));
+	
+	// paddings zeros to IR file
 	pad_zeros_to(padded_IR, arr_size);
 	
 
