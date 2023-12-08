@@ -15,27 +15,19 @@
 using namespace std;
 
 
-// char *format;
-// int chunk_size;
-// char *chunk_id;
-// char *subchunk1_id;
+
 int size1;
-// short block_align;
-// short bits_per_sample;
-// short audio_format;
-// short num_channels;
-// int sample_rate;
 char *subchunk2_id;
 int data_size;
 short* file_data;
-// int subchunk1_size;
-// int byte_rate;
+
+const int subchunk1_size_max = 18;
 
 typedef struct {
 	char *chunk_id;
 	int chunk_size;
 	char *format;
-	char *subchunk1_id;
+	char subchunk1_id[4];
 	int subchunk1_size;
 	short audio_format;
 	short num_channels;
@@ -48,72 +40,81 @@ typedef struct {
 Wavheader header;
 
 //function definitions
-void wavWrite(char *fileName, int numSamples, float *signal);
-float* wavRead(char *fileName, float *signal, int *Thesize);
+void writeWavFile(char *fileName, int num_samples, float *signal);
+float* readWavFile(char *fileName, float *signal, int *combined_size);
 void convolve(float x[], int N, float h[], int M, float y[], int P);
 void four1(double data[], int nn, int isign);
-void FFTScale (double signal[], int N);
 
 
 
-int main(int argc, char* args[])
-{
-	std::clock_t start;
-    double duration;
-    start = std::clock();
-	if (argc!= 4){ //check if we hve 3 command line arguments
-		
-		printf("Please enter an input file, and IR file and an output file name." );
-		return 0;
+int main(int argc, char* argv[]){
+
+	// begin timer
+	clock_t startingTime = clock();
+
+	// Process the command line arguments
+	if (argc <= 3){
+		printf("Error: must enter an input file, an, IR file, and an output file name.\n");
+		fprintf(stderr, "Usage:  %s input_file ouput_file\n", argv[0]);
+		exit(-1);
 	}
 
-	char *inputFileName = args[1];
-	char *IRFileName = args[2];
-	char *outputFileName = args[3];
-	float *inFileSignal;
-	int inFileSignalSize;
-	float *IRFileSignal;
-	int IRFileSignalSize;
-	inFileSignal = wavRead(inputFileName, inFileSignal, &size1 );
-	inFileSignalSize = size1;
-	IRFileSignal = wavRead(IRFileName, IRFileSignal, &size1);
-	IRFileSignalSize = size1;
-	int outFileSignalSize = inFileSignalSize + IRFileSignalSize - 1;
-	float *outFileSignal = new float[outFileSignalSize];
-	printf("Convolving...");
-	convolve(inFileSignal, inFileSignalSize, IRFileSignal, IRFileSignalSize, outFileSignal, outFileSignalSize);
-	//scale output below
-	float min = 0, max = 0;
-	int i = 0;
+	// read input and IR files
+	char *input_file = argv[1];
+	char *IR_file = argv[2];
+	char *ouput_file = argv[3];
 
-	for(i = 0; i < outFileSignalSize; i++)
-	{
-		if(outFileSignal[i] > max)
-			max = outFileSignal[i];
-		if(outFileSignal[i] < min)
-			min = outFileSignal[i];
+
+	// Initializing file signals
+	float *file_signal, *file_signal_IR, *outfile_signal;
+	int file_signal_size, file_signal_IR_size, outfile_signal_size;
+
+	// reding raw file
+	file_signal = readWavFile(input_file, file_signal, &size1 );
+	file_signal_size = size1;
+
+	// reading IR file 
+	file_signal_IR = readWavFile(IR_file, file_signal_IR, &size1);
+	file_signal_IR_size = size1;
+
+	outfile_signal_size = file_signal_size + file_signal_IR_size - 1;
+	outfile_signal = new float[outfile_signal_size];
+
+	// begin convolving
+	convolve(file_signal, file_signal_size, file_signal_IR, file_signal_IR_size, outfile_signal, outfile_signal_size);
+	
+	float smallest_size = 0;
+	float largest_size = 0;
+
+	for(int i = 0; i < outfile_signal_size; i++) {
+		if(outfile_signal[i] > largest_size)
+			largest_size = outfile_signal[i];
+		if(outfile_signal[i] < smallest_size)
+			smallest_size = outfile_signal[i];
 	}
 
-	min = min * -1;
-	if(min > max)
-		max = min;
-	for(i = 0; i < outFileSignalSize; i++)
-	{
-		outFileSignal[i] = outFileSignal[i] / max;
+	smallest_size = smallest_size * -1;
+	if(smallest_size > largest_size)
+		largest_size = smallest_size;
+	for(int i = 0; i < outfile_signal_size; i++){
+		outfile_signal[i] = outfile_signal[i] / largest_size;
 	}
-	wavWrite(outputFileName, outFileSignalSize, outFileSignal);
-	printf("Written to file: %s\n", outputFileName);
-	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-	printf("The duration of the program is: ");
-	std::cout<< duration <<" seconds";
+
+	// write to file 
+	writeWavFile(ouput_file, outfile_signal_size, outfile_signal);
+	printf("Written to file: %s\n", ouput_file);
+
+	// Elapsed time of the program
+	double time_elapsed = clock() - startingTime;
+	printf("FFT convolution program finished in %f seconds\n\n", time_elapsed/CLOCKS_PER_SEC);
 	return 0;
 }
 
-void wavWrite(char *fileName, int numSamples, float *signal)
-{
+void writeWavFile(char *fileName, int num_samples, float *signal) {
 	ofstream outFile( fileName, ios::out | ios::binary);
+
 	//  Calculate the total number of bytes for the data chunk  
-	int chunk_size = header.num_channels * numSamples * (header.bits_per_sample / 8);
+	int chunk_size = header.num_channels * num_samples * (header.bits_per_sample / 8);
 	header.chunk_id = "RIFF";
 	outFile.write( header.chunk_id, 4);
 	outFile.write( (char*) &chunk_size, 4);
@@ -129,11 +130,11 @@ void wavWrite(char *fileName, int numSamples, float *signal)
 	outFile.write( (char*) &header.block_align, 2);
 	outFile.write( (char*) &header.bits_per_sample, 2);
 	outFile.write( subchunk2_id, 4);
-	data_size = numSamples * 2;
+	data_size = num_samples * 2;
 	outFile.write( (char*)&data_size, 4);
 	short val;
-	for(int i = 0; i < numSamples; i++)
-	{
+
+	for(int i = 0; i < num_samples; i++) {
 		val = (short)(signal[i] * (pow(2,15) - 1));
 		outFile.write((char*)&val, 2);
 	}
@@ -141,7 +142,7 @@ void wavWrite(char *fileName, int numSamples, float *signal)
 }
 
 
-float* wavRead(char *fileName, float *signal, int *Thesize)
+float* readWavFile(char *fileName, float *signal, int *combined_size)
 {
 	ifstream inputFile( fileName, ios::in | ios::binary);
 	inputFile.seekg(ios::beg);
@@ -150,7 +151,7 @@ float* wavRead(char *fileName, float *signal, int *Thesize)
 	inputFile.read( (char*) &header.chunk_size, 4);
 	header.format = new char[4];
 	inputFile.read( header.format, 4);
-	header.subchunk1_id = new char[4];
+
 	inputFile.read( header.subchunk1_id, 4);
 	inputFile.read( (char*) &header.subchunk1_size, 4);
 	inputFile.read( (char*) &header.audio_format, 2);
@@ -160,30 +161,31 @@ float* wavRead(char *fileName, float *signal, int *Thesize)
 	inputFile.read( (char*) &header.block_align, 2);
 	inputFile.read( (char*) &header.bits_per_sample, 2);
 
-	if(header.subchunk1_size == 18)
-	{
-		char *garbage;
-		garbage = new char[2];
-		inputFile.read( garbage, 2);
+	// remove bytes if subchunk1 size is 18
+	char extra_bytes[2];
+	if(header.subchunk1_size == subchunk1_size_max) {
+		inputFile.read( extra_bytes, 2);
 	}
 
+
+	// ****** The following code is from TA
 	subchunk2_id = new char[4];
 	inputFile.read( subchunk2_id, 4);
-	//DataSize
+
+	
 	inputFile.read( (char*)&data_size, 4);
-	//GetData
-	*Thesize = data_size / 2;
+	
+	*combined_size = data_size / 2;
 	int size = data_size / 2;
 	file_data = new short[size];
-	for(int j = 0 ; j < size; j++)
-	{
+
+	for(int j = 0 ; j < size; j++) {
 		inputFile.read((char*) &file_data[j], 2);
 	}
 
-	short val;
 	signal = new float[size];
-	for(int i = 0; i < size; i++)
-	{
+	short val;
+	for(int i = 0; i < size; i++) {
 		val = file_data[i];
 		signal[i] = (val * 1.0) / (pow(2,15) - 1);
 		if(signal[i] < -1.0)
@@ -192,55 +194,106 @@ float* wavRead(char *fileName, float *signal, int *Thesize)
 	}
 	inputFile.close();
 	return signal;
+
+	// *********** TA code ends
 }
 
+void padding(double paddedArray[], int some_M, float some_x[]) {
+	int i;
+	for (i = 0; i < (some_M * 2); i+=2) {
+		paddedArray[i] = some_x[i/2];
+		paddedArray[i+1] = 0;
+	}
+}
+
+// Function to pad an input array with zeros
+double* padArray(float input[], int inputSize, double* paddedArray, int paddedSize) {
+    for (int i = 0; i < paddedSize; i += 2) {
+        if (i / 2 < inputSize) {
+            paddedArray[i] = input[i / 2];
+            paddedArray[i + 1] = 0;
+        } else {
+            paddedArray[i] = 0;
+            paddedArray[i + 1] = 0;
+        }
+    }
+	return paddedArray;
+}
+
+void pad_zeros_to(double *arr, int current_array_size) {
+		for (int i = 0; i < current_array_size; ++i) {
+        	arr[current_array_size + i] = 0.0;
+    	}
+}
+
+void increase_padding(double *arr_output, double *arr_inputfile, double *arr_paddedIR, int arr_size){
+	for (int i = 0; i < (arr_size * 2); i+=2) {
+		arr_output[i] = (arr_inputfile[i] * arr_paddedIR[i]) - (arr_inputfile[i+1] * arr_paddedIR[i+1]);
+		arr_output[i+1] = (arr_inputfile[i+1] * arr_paddedIR[i]) + (arr_inputfile[i] * arr_paddedIR[i+1]);
+	}
+}
 
 //uses FFT algorithm to convolve
 void convolve(float x[], int N, float h[], int M, float y[], int P)
 {
-	int myArraySize = 1;
-	int i = 0;
-	// For FFT we need array size of a power of 2
-	while (myArraySize < P) {
-		myArraySize *= 2;
+	int arr_size = 1;
+	
+	// Build array of size 2^n
+	while (arr_size < P) {
+		arr_size *= 2;
 	}
 
-	double *paddedInput = new double[2 * myArraySize];
-	for (i = 0; i < (N * 2); i+=2) {
-		paddedInput[i] = x[i/2];
-		paddedInput[i+1] = 0;
+
+	double *inputfile_padded = new double[2 * arr_size];
+	double *padded_IR = new double[2 * arr_size];
+
+	for (int i = 0; i < (N * 2); i+=2) {
+		inputfile_padded[i] = x[i/2];
+		inputfile_padded[i+1] = 0;
 	}
-	for (; i <myArraySize; i++) {
-		paddedInput[i] = 0;
+
+	pad_zeros_to(inputfile_padded, arr_size);
+	
+
+	for (int i = 0; i < (M * 2); i+=2) {
+		padded_IR[i] = h[i/2];
+		padded_IR[i+1] = 0;
+	}
+
+	pad_zeros_to(padded_IR, arr_size);
+	
+
+	double *padded_output = new double[2 * arr_size];
+	pad_zeros_to(padded_output, arr_size);
+
+
+	// call four1 in padded input
+	four1((inputfile_padded - 1), arr_size, 1);
+
+	// call four1 on padded impulse
+	four1((padded_IR - 1), arr_size, 1);
+
+	// for (int i = 0; i < (arr_size * 2); i+=2) {
+	// 	padded_output[i] = (inputfile_padded[i] * padded_IR[i]) - (inputfile_padded[i+1] * padded_IR[i+1]);
+	// 	padded_output[i+1] = (inputfile_padded[i+1] * padded_IR[i]) + (inputfile_padded[i] * padded_IR[i+1]);
+	// }
+
+	increase_padding(padded_output, inputfile_padded, padded_IR, arr_size);
+
+	
+
+	four1((padded_output - 1), arr_size, -1);
+	
+
+	// Scaling FFT by padding
+	for (int k = 0, i = 0; k < arr_size; k++, i+=2) {
+		padded_output[i] /= (float)arr_size;
+		padded_output[i+1] /= (float)arr_size;
 	}
 	
-	double *paddedImpulseResponse = new double[2 * myArraySize];
-	for (i = 0; i < (M * 2); i+=2) {
-		paddedImpulseResponse[i] = h[i/2];
-		paddedImpulseResponse[i+1] = 0;
-	}
-	for (; i < myArraySize; i++) {
-		paddedImpulseResponse[i] = 0;
-	}
-	
-	double *paddedOutput = new double[2 * myArraySize];
-	for (i = 0; i < myArraySize; i++) {
-		paddedOutput[i] = 0;
-	}
-	four1((paddedInput - 1), myArraySize, 1);
-	four1((paddedImpulseResponse - 1), myArraySize, 1);
-	for (i = 0; i < (myArraySize * 2); i+=2) {
-		paddedOutput[i] = (paddedInput[i] * paddedImpulseResponse[i]) - (paddedInput[i+1] * paddedImpulseResponse[i+1]);
-		paddedOutput[i+1] = (paddedInput[i+1] * paddedImpulseResponse[i]) + (paddedInput[i] * paddedImpulseResponse[i+1]);
-	}
-	four1((paddedOutput - 1), myArraySize, -1);
-	
-	// FFT scaling.. we need to scale as per class notes
-	FFTScale(paddedOutput, myArraySize);
-	
-	// removing padding
-	for (i = 0; i < P; i++) {
-		y[i] = paddedOutput[i*2];
+	// Removing the padding
+	for (int i = 0; i < P; i++) {
+		y[i] = padded_output[i*2];
 	}
 }
 
@@ -253,6 +306,8 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 //  nn*2. This code assumes the array starts
 //  at index 1, not 0, so subtract 1 when
 //  calling the routine (see main() below)
+
+// Code is from TA Kimiya Saadat
 
 void four1(double data[], int nn, int isign)
 {
@@ -302,17 +357,6 @@ void four1(double data[], int nn, int isign)
     }
 }
 
-//the output from either the FFTs or the IFFT (but not both) will have to be scaled by dividing by each data point by N
-//this algorithm is taken from class Notes
-void FFTScale (double x[], int N)
-{
-	int k;
-	int i;
-	for (k = 0, i = 0; k < N; k++, i+=2) {
-		x[i] /= (float)N;
-		x[i+1] /= (float)N;
-	}
-}
 
 
 
