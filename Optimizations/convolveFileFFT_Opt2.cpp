@@ -222,7 +222,6 @@ float* readWavFile(char *file_name, float *signal, int *combined_size) {
 
 	// }
 
-
 	// AFTER: 
 	for(int i = 0; i < size; i++) {
 		temp = file_data[i];
