@@ -116,7 +116,7 @@ int main(int argc, char* argv[]){
 
 	// Elapsed time of the program
 	double time_elapsed = clock() - startingTime;
-	printf("FFT convolution program finished in %f seconds\n\n", time_elapsed/CLOCKS_PER_SEC);
+	printf("Baseline convolution program finished in %f seconds\n\n", time_elapsed/CLOCKS_PER_SEC);
 	return 0;
 }
 
