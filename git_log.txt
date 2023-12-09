@@ -1,0 +1,131 @@
+commit afa12413801dc57dd405bf96b51051e351b39961
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:46:00 2023 -0700
+
+    Moving stuff around
+
+commit e2ca2bddb45b434551aef301bdb37bd0c3f44c32
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:45:31 2023 -0700
+
+    Profiler report for baseline program
+
+commit 80183fc604f8cf1fc7a99c05f03df72a6b4c99ed
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:45:11 2023 -0700
+
+    Profiler Report for FFT
+
+commit aa6ad49d1dd1ac9d7589b1360f4d1e27bbbe4ba2
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:44:44 2023 -0700
+
+    Optimization 2: strength reduction
+
+commit 387bc05821b2382c84b763e96660e6b1ddc06b10
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:20:41 2023 -0700
+
+    Optimization 2: strength reduction (remove power library and replace with hardcoded number 32767)
+
+commit 18dc177a720a02542eb1ac3cac831934dc0dafa1
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:03:33 2023 -0700
+
+    moved to another folfer
+
+commit 8763dee4b1a411ff26ff69ed1ee6a9be42c5c05f
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:03:15 2023 -0700
+
+    updated baseline
+
+commit a5c09677e37c05ba019bec15d6ef6240756d09af
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 17:03:01 2023 -0700
+
+    bitshift optimization (using << instead of *)
+
+commit ece080342d6e286d2145946dc7d54d6495081bcb
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 15:37:05 2023 -0700
+
+    Removed unnessary TA code
+
+commit 551325f3cb1df65616e4e6ba0f66cd3274c51eea
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 15:36:50 2023 -0700
+
+    removed unnessary files
+
+commit 8e059fdbe4b42c0938fb8ac38bf6370a13981406
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 12:55:04 2023 -0700
+
+    Finished fft of baseline
+
+commit ffdea29e0eadc359c17373d6682783a9eb338cb9
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 12:54:45 2023 -0700
+
+    Finished basline
+
+commit 6ecd4c7936d898e5f1b48c732f7193ad5ce6d6ed
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Fri Dec 8 12:12:41 2023 -0700
+
+    cleaned up code, added my name  to file
+
+commit 8491cbf289dab089277e52184fb2847e30c95149
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Thu Dec 7 18:28:04 2023 -0700
+
+    Changed file from c to c++
+
+commit a9b17086969956f9bdf4f8665f4e4d45524f7ac1
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Thu Dec 7 18:27:47 2023 -0700
+
+    testing audio
+
+commit 8db4684377109dfa0976861531eaedb478a8321b
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Thu Dec 7 18:27:14 2023 -0700
+
+    Fixed four1 function, works now
+
+commit d858f1c22d6f5dac186df29e4cd66438b796eaa6
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Thu Dec 7 15:37:25 2023 -0700
+
+    created struct
+
+commit 2c9ec7c573bba5052ef28a976a49ba02af087e61
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Thu Dec 7 14:26:39 2023 -0700
+
+    Changed float to double
+
+commit 619f58e441eea8872bf203496385bb7edc8a5894
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Wed Dec 6 16:27:42 2023 -0700
+
+    Added convolve with FFT function (TA code)
+
+commit c62678a149387f60bb58a11e0d8d064c4beaee6c
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Wed Dec 6 16:27:15 2023 -0700
+
+    Added sounds
+
+commit cd53bd2a609601f8cf690620194d0f2b0676c85a
+Author: Anish Pokhrel <anishpokhrel2002@gmail.com>
+Date:   Wed Dec 6 16:03:24 2023 -0700
+
+    Added TA code for baseline
+
+commit 0a1a3c38cbc418ad948c22d74ec144e33f51e67d
+Author: Anish Pokhrel <66049909+apokhrel7@users.noreply.github.com>
+Date:   Wed Dec 6 15:41:08 2023 -0700
+
+    Initial commit
